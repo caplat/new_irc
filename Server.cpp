@@ -115,6 +115,7 @@ void Server::acceptClient(){
 void Server::receiveData(int fd){
 
     Client *cli = getClient(fd);
+    std::vector<std::string> cmds;
     char buff[1024];
     memset(buff, 0, sizeof(buff));
 
@@ -130,10 +131,17 @@ void Server::receiveData(int fd){
     } else {
         buff[bytes] = '\0';
         cli->setBuffer(buff);
-        std::cout << "Client " << fd << " Data: " << cli->getBuffer() /*<< buff*/ << std::endl;
+        // print pour buffer
+        // std::cout << "Client " << fd << " Data: " << cli->getBuffer() /*<< buff*/ << std::endl;
         //on regarde si presence de /r/n
         if(cli->getBuffer().find_first_of("\r\n") == std::string::npos)
 			return;
+        cmds = separate_cmds(fd);
+        // print pour cmds
+        for(size_t i = 0; i < cmds.size(); i++){
+
+            std::cout << "cmds : " << cmds[i] << std::endl;
+        }
     }
 }
 
@@ -149,7 +157,22 @@ std::vector<std::string> Server::separate_cmds(int fd){
 
     std::vector<std::string>cmds;
     Client* cli = getClient(fd);
-    std::string str;
+    std::string str = cli->getBuffer();
+    std::string delimiter = "\r\n";
+    size_t start = 0;
+    size_t end = 0;
 
-    
+    while ((end = str.find(delimiter, start)) != std::string::npos) {
+        
+        std::string token = str.substr(start, end - start);
+        if (!token.empty()) {
+            cmds.push_back(token);
+        }
+        start = end + delimiter.length();
+    }
+    std::string token = str.substr(start);
+    if(!token.empty()){
+        cmds.push_back(token);
+    }
+    return cmds;
 }
