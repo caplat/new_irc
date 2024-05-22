@@ -13,3 +13,13 @@ void Client::setFd(int fd){
 
     fd_ = fd;
 }
+
+std::string Client::getBuffer()const{
+
+    return buffer_;
+}
+
+void Client::setBuffer(std::string str){
+
+    buffer_ = str;
+}

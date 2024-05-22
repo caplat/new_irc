@@ -1,6 +1,6 @@
 #include "Server.hpp"
 
-Server::Server(int port) : port_(port){}
+Server::Server(int port, std::string password) : port_(port), password_(password){}
 
 Server::~Server(){}
 
@@ -32,7 +32,7 @@ void Server::closeFd(){
     }
     if(server_fd_ != -1){
 
-        std::cout << "Server " << server_fd_ << "disconnected" << std::endl;
+        std::cout << "Server " << server_fd_ << " disconnected" << std::endl;
         close(server_fd_);
     }
 }
@@ -40,14 +40,14 @@ void Server::closeFd(){
 void Server::initializeServer(){
 
     createSocket();
-    std::cout << "Server " << server_fd_ << "is connected on port " << port_ << std::endl;
+    std::cout << "Server " << server_fd_ << " is connected on port " << port_ << std::endl;
     while(1){
 
         if(poll(fds_.data(), fds_.size(), -1) == -1)
             throw(std::runtime_error("poll() failed"));
         for(size_t i = 0; i < fds_.size(); i++){
             if(fds_[i].revents && POLLIN){
-                if(fds_[i].fd = server_fd_)
+                if(fds_[i].fd == server_fd_)
                     acceptClient();
                 else
                     receiveData(fds_[i].fd);
@@ -109,24 +109,47 @@ void Server::acceptClient(){
     clients_.push_back(cli);
     fds_.push_back(NewPoll);
 
-    std::cout << "Client " << client_fd_ << "is connected" << std::endl;
+    std::cout << "Client " << client_fd_ << " is connected" << std::endl;
 }
 
 void Server::receiveData(int fd){
 
+    Client *cli = getClient(fd);
     char buff[1024];
     memset(buff, 0, sizeof(buff));
 
     size_t bytes = recv(fd, buff, sizeof(buff) - 1, 0);
-    if(bytes <= 0){
-
-        std::cout << "Client " << fd << "disconnected" << std::endl;
+    if (bytes <= 0) {
+        if (bytes == 0) {
+            std::cout << "Client " << fd << " disconnected" << std::endl;
+        } else {
+            throw std::runtime_error("recv() failed for client ");
+        }
         clearClients(fd);
         close(fd);
-    } 
-    else{
-
+    } else {
         buff[bytes] = '\0';
-        std::cout << "Client " << fd << " Data: " << std::endl;
+        cli->setBuffer(buff);
+        std::cout << "Client " << fd << " Data: " << cli->getBuffer() /*<< buff*/ << std::endl;
+        //on regarde si presence de /r/n
+        if(cli->getBuffer().find_first_of("\r\n") == std::string::npos)
+			return;
     }
+}
+
+Client* Server::getClient(int fd){
+	for (size_t i = 0; i < clients_.size(); i++){
+		if (clients_[i].getFd() == fd)
+			return &clients_[i];
+	}
+	return NULL;
+}
+
+std::vector<std::string> Server::separate_cmds(int fd){
+
+    std::vector<std::string>cmds;
+    Client* cli = getClient(fd);
+    std::string str;
+
+    
 }

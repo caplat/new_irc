@@ -4,10 +4,10 @@ int main(int argc, char **argv)
 {
     if(argc != 3){
 
-        std::cout << "please retry with /ircserv <port> <password>";
+        std::cout << "please retry with /ircserv <port> <password>" << std::endl;
         return(0);
     }
-    Server serv(std::atoi(argv[1]));
+    Server serv(std::atoi(argv[1]), argv[2]);
     std::cout << "---Server---" << std::endl;
     try
     {
